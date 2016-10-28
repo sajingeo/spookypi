@@ -3,114 +3,115 @@
 ### credits briandconnelly
 
 import pywink
-import lifxlan
+from lifxlan import *
 import pygame
 import os
 import sys
 import time
 import requests
+import subprocess
 
-CLIENT_ID = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-CLIENT_SECRET = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-EMAIL = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-PWD = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-IFTTT_KEY = "xxxxxxxxxxxxxxxxxxxxxxxxx"
+CLIENT_ID = "xxxxxxxxxxxxxxxxxxxxxxx"
+CLIENT_SECRET = "xxxxxxxxxxxxxxxxxxxxxxxxxx"
+EMAIL = "xxxxxxxxxxxxxxxxxxxxxxxxxx"
+PWD = "xxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+IFTTT_KEY = "xxxxxxxxxxxxxxxxxxxxxx"
 
-BLUE = [43634, 65535, 65535, 3500]
+BLUE = [43634, 65535, 32767, 3500]
 COLD_WHITE = [58275, 0, 65535, 9000]
 BLACK = [0, 0, 0, 0]
-ORANGE = [5525, 65535, 65535, 3500]
+ORANGE = [5525, 65535, 32767, 3500]
 
-THUNDERSTORM_SLEEPS= [0.2,0.2,0.5,0.2,0.2]
+THUNDERSTORM_SLEEPS= [0.1,0.1,0.1,0.1,0.1]
+
+DEVNULL = open(os.devnull, 'wb')
 
 pywink.set_wink_credentials(EMAIL,PWD,CLIENT_ID,CLIENT_SECRET) ##WINK
-lifx = Lifx.LAN() ##lifx
+lifx = LifxLAN(2) ##lifx
 pygame.mixer.init() ##music
 
 def trigger_ifttt(event="spooky"):
-    """Send an event to the IFTTT maker channel"""
-    url = "https://maker.ifttt.com/trigger/{e}/with/key/{k}/".format(e=event,
-                                                                     k=IFTTT_KEY)
-    payload = {'value1': 0, 'value2': 0, 'value3': 0}
-    return requests.post(url, data=payload)
+	"""Send an event to the IFTTT maker channel"""
+	url = "https://maker.ifttt.com/trigger/{e}/with/key/{k}/".format(e=event,
+																	 k=IFTTT_KEY)
+	payload = {'value1': 0, 'value2': 0, 'value3': 0}
+	return requests.post(url, data=payload)
 
 def loop():
 	initial_brightness = []
 	bulbs = pywink.get_bulbs()
-	for bulb in bulbs: ## save current brightness
-		initial_brightness.append(bulb.brightness())
 
 	for bulb in bulbs: ## turn off main lights
 		bulb.set_state(False,brightness=0)
 
 	##play spooky music
-	pygame.mixer.music.load("spooky.wav")
-	pygame.mixer.play()
+	ps1 = subprocess.Popen(["exec omxplayer -o local spooky.wav"],stdout=DEVNULL,shell=True)
 
 	## start with a blue glow on lifx
-	lifx.set_color_all_lights_color(BLUE,duration = 15)
-	time.sleep (60)
+	lifx.set_color_all_lights(BLUE,duration = 15)
+	time.sleep (15)
 
-	while pygame.mixer.music.get_busy() == True:
-    	continue ## wait for spooky move to get over
+	ps1.kill()## wait for spooky move to get over
 
 	##play lightning
 	##play thunder
+	ps2 = subprocess.Popen(["exec omxplayer -o local thunder.wav"],stdout=DEVNULL,shell = True)
 	thunder()
-	pygame.mixer.music.load("thunder.wav")
-	pygame.mixer.play()
+	ps2.kill()
 
 	## play spooky music
-	pygame.mixer.music.load("spooky.wav")
-	pygame.mixer.play()
-
-	#turn on TV
 	trigger_ifttt("spooky")
-	while pygame.mixer.music.get_busy() == True:
-    	continue
+	ps3 = subprocess.Popen(["exec omxplayer -o local spooky.wav"],stdout=DEVNULL,shell = True)
+	lifx.set_color_all_lights(BLUE,duration = 15)
+	time.sleep(15)
+	ps3.kill()
 
 	##wait for 30 secs
-	time.sleep(30)
+	time.sleep(15)
 
 	##play lightning
 	##play thunder
+	ps4 = subprocess.Popen(["exec omxplayer -o local thunder.wav"],stdout=DEVNULL,shell = True)
 	thunder()
-	pygame.mixer.music.load("thunder.wav")
-	pygame.mixer.play()
-	while pygame.mixer.music.get_busy() == True:
-    	continue ## wait for thunder to be over
+	ps4.kill()
 
-	##turn off TV
-	trigger_ifttt("spookend")
 
+	lifx.set_color_all_lights(BLUE,duration = 15)
 	## play music
 	## restore house
-	pygame.mixer.music.load("spooky.wav")
-	pygame.mixer.play()
-	while pygame.mixer.music.get_busy() == True:
-    	continue
+	ps5 = subprocess.Popen(["exec omxplayer -o local spooky.wav"],stdout=DEVNULL,shell = True)
+	time.sleep(10)
+	
+	##turn off TV
+	trigger_ifttt("spookend")
+	
+	ps5.kill()
 
-    pygame.mixer.music.load("spooky.wav")
-	pygame.mixer.play() ## play screeming lady!!
+	ps6 = subprocess.Popen(["exec omxplayer -o local scream.wav"],stdout=DEVNULL,shell = True)
+	time.sleep(2)
+	ps6.kill()
 
-	for index,bulb in enumerate(bulbs): ## restore home lights
-		bulb.set_state(initial_brightness[index])
+	bulbs = pywink.get_bulbs()
+	bulbs[0].set_state(True,0.04)
+	bulbs[1].set_state(True,0.04)
 
 	## set color back to orange
-	lifx.set_color_all_lights_color(ORANGE,duration = 15)
+	lifx.set_color_all_lights(ORANGE,duration = 15)
+	os.system('killall omxplayer.bin')
 	
 
 def thunder():
 	thunder = 4
 	selector = True
+	lifx.set_power_all_lights("on")
 	while(thunder > 0):
 		if (selector):
 			selector = False
-			lifx.set_color_all_lights_color(COLD_WHITE,rapid = True)
+			lifx.set_color_all_lights(COLD_WHITE,rapid = True)
 		else:
 			selector = True
-			lifx.set_color_all_lights_color(BLACK,rapid = True)
-
+			lifx.set_color_all_lights(BLACK,rapid = True)
+		thunder = thunder - 1
 		time.sleep(THUNDERSTORM_SLEEPS[thunder])
 
 
@@ -120,13 +121,13 @@ def screen_init():
 	screen.fill((255, 255, 255))
 	pygame.display.update()
 
-    font = pygame.font.SysFont('freeserif', 38, bold=1)
-    text = ":)  SMILE   NOW   !!  " + str(timeDelay) 
-    textSurface = font.render(text, 1, pygame.Color(255, 255, 255))
-    textSurface = pygame.transform.rotate(textSurface,90)
-    screen.blit(textSurface, (400, 80))
-    # finally update and display the image
-    pygame.display.update()
+	font = pygame.font.SysFont('freeserif', 38, bold=1)
+	text = ":)  SMILE   NOW   !!  " + str(timeDelay) 
+	textSurface = font.render(text, 1, pygame.Color(255, 255, 255))
+	textSurface = pygame.transform.rotate(textSurface,90)
+	screen.blit(textSurface, (400, 80))
+	# finally update and display the image
+	pygame.display.update()
 
 def detect_mouse_click():
 	ev = pygame.event.get()
@@ -145,4 +146,4 @@ def main():
 		time.sleep(60)
 
 if __name__ == "__main__":
-    main()
+	main()
