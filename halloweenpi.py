@@ -12,10 +12,10 @@ import requests
 import subprocess
 
 CLIENT_ID = "xxxxxxxxxxxxxxxxxxxxxxx"
-CLIENT_SECRET = "xxxxxxxxxxxxxxxxxxxxxxxxxx"
-EMAIL = "xxxxxxxxxxxxxxxxxxxxxxxxxx"
-PWD = "xxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-IFTTT_KEY = "xxxxxxxxxxxxxxxxxxxxxx"
+CLIENT_SECRET = "xxxxxxxxxxxxxxxxxxx"
+EMAIL = "xxxxxxxxxxxxxxxxxxxxxxxxxxx"
+PWD = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+IFTTT_KEY = "xxxxxxxxxxxxxxxxxxxxxxx"
 
 BLUE = [43634, 65535, 32767, 3500]
 COLD_WHITE = [58275, 0, 65535, 9000]
@@ -28,7 +28,10 @@ DEVNULL = open(os.devnull, 'wb')
 
 pywink.set_wink_credentials(EMAIL,PWD,CLIENT_ID,CLIENT_SECRET) ##WINK
 lifx = LifxLAN(2) ##lifx
+pygame.init()
 pygame.mixer.init() ##music
+pygame.mouse.set_visible(False)
+screen = pygame.display.set_mode((0,0), pygame.FULLSCREEN)
 
 def trigger_ifttt(event="spooky"):
 	"""Send an event to the IFTTT maker channel"""
@@ -98,7 +101,7 @@ def loop():
 	## set color back to orange
 	lifx.set_color_all_lights(ORANGE,duration = 15)
 	os.system('killall omxplayer.bin')
-	
+	screen_init() ## restore play screen
 
 def thunder():
 	thunder = 4
@@ -116,16 +119,16 @@ def thunder():
 
 
 def screen_init():
-	pygame.init()
-	screen = pygame.display.set_mode((0,0), pygame.FULLSCREEN)
-	screen.fill((255, 255, 255))
+	screen.fill((247, 148, 0))
 	pygame.display.update()
-
+	img = pygame.image.load('pumkin.png')
+	pic = pygame.transform.scale(img,(100,100))
 	font = pygame.font.SysFont('freeserif', 38, bold=1)
-	text = ":)  SMILE   NOW   !!  " + str(timeDelay) 
-	textSurface = font.render(text, 1, pygame.Color(255, 255, 255))
-	textSurface = pygame.transform.rotate(textSurface,90)
-	screen.blit(textSurface, (400, 80))
+	text = "Happy Halloween"
+	textSurface = font.render(text, 1, pygame.Color(2, 2, 2))
+	screen.blit(textSurface, (260, 230))
+	screen.blit(pic,(150,200))
+	screen.blit(pic,(550,200))
 	# finally update and display the image
 	pygame.display.update()
 
@@ -135,15 +138,21 @@ def detect_mouse_click():
 	for event in ev:
 		# handle MOUSEBUTTONUP
 		if event.type == pygame.MOUSEBUTTONDOWN:
+			screen.fill((0, 0, 0))
+			pygame.display.update()
 			loop()
+			time.sleep(60)
+			pygame.event.clear() ## clear all remaining events
 
 
 
 def main():
 	print "starting spookyness..."
+	screen_init()
 	while (True):
-		loop()
-		time.sleep(60)
+		#loop()
+		detect_mouse_click()
+		## time.sleep(60)
 
 if __name__ == "__main__":
 	main()
