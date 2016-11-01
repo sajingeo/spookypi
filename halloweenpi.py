@@ -11,11 +11,11 @@ import time
 import requests
 import subprocess
 
-CLIENT_ID = "xxxxxxxxxxxxxxxxxxxxxxx"
-CLIENT_SECRET = "xxxxxxxxxxxxxxxxxxx"
-EMAIL = "xxxxxxxxxxxxxxxxxxxxxxxxxxx"
-PWD = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-IFTTT_KEY = "xxxxxxxxxxxxxxxxxxxxxxx"
+CLIENT_ID = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+CLIENT_SECRET = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+EMAIL = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+PWD = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+IFTTT_KEY = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 
 BLUE = [43634, 65535, 32767, 3500]
 COLD_WHITE = [58275, 0, 65535, 9000]
@@ -46,6 +46,8 @@ def loop():
 
 	for bulb in bulbs: ## turn off main lights
 		bulb.set_state(False,brightness=0)
+
+	trigger_ifttt(event="bar_off")
 
 	##play spooky music
 	ps1 = subprocess.Popen(["exec omxplayer -o local spooky.wav"],stdout=DEVNULL,shell=True)
@@ -101,6 +103,9 @@ def loop():
 	## set color back to orange
 	lifx.set_color_all_lights(ORANGE,duration = 15)
 	os.system('killall omxplayer.bin')
+	
+	trigger_ifttt(event="bar_on")
+	
 	screen_init() ## restore play screen
 
 def thunder():
@@ -125,8 +130,11 @@ def screen_init():
 	pic = pygame.transform.scale(img,(100,100))
 	font = pygame.font.SysFont('freeserif', 38, bold=1)
 	text = "Happy Halloween"
+	warning = "Please do not touch!!"
 	textSurface = font.render(text, 1, pygame.Color(2, 2, 2))
+	warningSurface = font.render(warning, 1, pygame.Color(255, 0, 0))
 	screen.blit(textSurface, (260, 230))
+	screen.blit(warningSurface, (240, 300))
 	screen.blit(pic,(150,200))
 	screen.blit(pic,(550,200))
 	# finally update and display the image
